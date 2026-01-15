@@ -17,6 +17,7 @@ import {
   Milestone,
   OrchestratorSettings,
   PlanSnapshot,
+  ProjectContext,
   ProjectPhase,
   ProjectState,
   SideEffect,
@@ -40,10 +41,12 @@ export function transitionState(
         intent.payload.goal,
         now,
         intent.payload.settings,
+        intent.payload.context,
       );
       const planningTask = buildPlanningTask(
         {
           goal: intent.payload.goal,
+          context: intent.payload.context,
           clarifications: baseState.clarifications,
           stage: "clarification",
         },
@@ -59,6 +62,7 @@ export function transitionState(
       const planningTask = buildPlanningTask(
         {
           goal: state.goal,
+          context: state.context,
           clarifications: state.clarifications,
           stage: "clarification",
           note: intent.payload.description,
@@ -91,6 +95,7 @@ export function transitionState(
       const planningTask = buildPlanningTask(
         {
           goal: state.goal,
+          context: state.context,
           clarifications: state.clarifications,
           stage: "clarification",
           note: intent.payload?.reason ?? "replan",
@@ -134,6 +139,7 @@ export function createProjectState(
   goal: string,
   now: string,
   settings?: Partial<OrchestratorSettings>,
+  context?: ProjectContext,
 ): ProjectState {
   return {
     projectId,
@@ -141,6 +147,7 @@ export function createProjectState(
     version: 0,
     updatedAt: now,
     goal,
+    context,
     plans: {},
     pendingTasks: [],
     approvals: [],
@@ -170,8 +177,9 @@ function applyTransition(
 }
 
 function buildPlanningTask(
-  context: {
+  taskContext: {
     goal?: string;
+    context?: ProjectContext;
     clarifications: ClarificationRecord[];
     stage: "clarification" | "final";
     note?: string;
@@ -184,10 +192,11 @@ function buildPlanningTask(
     type: "planning",
     status: "pending",
     input: {
-      goal: context.goal,
-      clarifications: context.clarifications,
-      stage: context.stage,
-      note: context.note,
+      goal: taskContext.goal,
+      context: taskContext.context,
+      clarifications: taskContext.clarifications,
+      stage: taskContext.stage,
+      note: taskContext.note,
     },
     createdAt: now,
   };
@@ -233,6 +242,7 @@ function handleClarificationAnswer(
   const planningTask = buildPlanningTask(
     {
       goal: state.goal,
+      context: state.context,
       clarifications,
       stage: "clarification",
     },
@@ -260,14 +270,15 @@ function handleFinalizeScope(
   now: string,
   intent: Intent,
 ): StateTransitionResult {
-  const clarifications = state.clarifications.map((record) =>
+  const clarifications = state.clarifications.map((record): ClarificationRecord =>
     record.status === "resolved"
       ? record
-      : { ...record, status: "resolved", resolvedAt: record.resolvedAt ?? now },
+      : { ...record, status: "resolved" as const, resolvedAt: record.resolvedAt ?? now },
   );
   const planningTask = buildPlanningTask(
     {
       goal: state.goal,
+      context: state.context,
       clarifications,
       stage: "final",
       note: payload?.note,
@@ -498,9 +509,9 @@ function handleAgentResult(
     return failTransition(state, intent, "Task not found for agent result", now);
   }
 
-  const updatedTasks = state.pendingTasks.map((entry) =>
+  const updatedTasks = state.pendingTasks.map((entry): AgentTask =>
     entry.id === result.taskId
-      ? { ...entry, status: result.status === "success" ? "completed" : "failed" }
+      ? { ...entry, status: result.status === "success" ? "completed" as const : "failed" as const }
       : entry,
   );
 
@@ -636,7 +647,7 @@ function updateClarificationAnswers(
   now: string,
 ): { clarifications: ClarificationRecord[]; found: boolean } {
   let found = false;
-  const updated = clarifications.map((record) => {
+  const updated = clarifications.map((record): ClarificationRecord => {
     if (record.id !== clarificationId) {
       return record;
     }
@@ -644,7 +655,7 @@ function updateClarificationAnswers(
     return {
       ...record,
       answers,
-      status: "answered",
+      status: "answered" as const,
       resolvedAt: now,
     };
   });

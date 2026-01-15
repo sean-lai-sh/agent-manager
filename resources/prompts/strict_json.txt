@@ -1,0 +1,18 @@
+<critical_instruction>
+Your previous response was not valid JSON. You MUST output ONLY a valid JSON object.
+</critical_instruction>
+
+<strict_requirements>
+- Start response with { character
+- End response with } character
+- No text before or after the JSON
+- No markdown code fences (```)
+- No comments or explanations
+- No trailing commas
+- Use double quotes for all string keys and values
+- Ensure all brackets and braces are properly matched
+</strict_requirements>
+
+<validation>
+The response will be parsed with JSON.parse(). Any non-JSON content will cause a failure.
+</validation>

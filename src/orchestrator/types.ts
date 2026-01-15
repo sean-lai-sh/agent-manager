@@ -125,12 +125,20 @@ export interface OrchestratorSettings {
   requireRetryApproval: boolean;
 }
 
+export interface ProjectContext {
+  icp?: string;
+  techStack?: string[];
+  constraints?: string[];
+  coreFeatures?: string[];
+}
+
 export interface ProjectState {
   projectId: string;
   phase: ProjectPhase;
   version: number;
   updatedAt: string;
   goal?: string;
+  context?: ProjectContext;
   plans: Record<string, PlanSnapshot>;
   currentPlanId?: string;
   pendingTasks: AgentTask[];
@@ -145,7 +153,12 @@ export interface ProjectState {
 export type Intent =
   | {
     type: "create_project";
-    payload: { projectId: string; goal: string; settings?: Partial<OrchestratorSettings> };
+    payload: {
+      projectId: string;
+      goal: string;
+      context?: ProjectContext;
+      settings?: Partial<OrchestratorSettings>;
+    };
   }
   | {
     type: "add_feature";

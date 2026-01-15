@@ -94,6 +94,7 @@ The logic layer is pure logic plus prompts. It does not perform execution.
   - Agent role assignments
 
 Planning output must be structured and machine-parseable.
+Task role tags may be free-form; prefer namespaced roles for clarity (e.g., backend.parser).
 
 ### 3.3 Execution Policy
 - Decide:
