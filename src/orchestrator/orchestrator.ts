@@ -28,9 +28,10 @@ export class Orchestrator {
 
   async handleIntent(intent: Intent): Promise<StateTransitionResult> {
     const currentState = this.state ?? this.bootstrapState(intent);
-    const result = await this.dispatcher.dispatch(currentState, intent);
+    const result = this.dispatcher.computeTransition(currentState, intent);
     this.state = result.newState;
     await this.store.save(this.state);
+    await this.dispatcher.executeSideEffects(result.sideEffects);
     return result;
   }
 
@@ -40,6 +41,6 @@ export class Orchestrator {
     }
 
     const now = new Date().toISOString();
-    return createProjectState(intent.payload.projectId, intent.payload.goal, now);
+    return createProjectState(intent.payload.projectId, intent.payload.goal, now, intent.payload.settings);
   }
 }

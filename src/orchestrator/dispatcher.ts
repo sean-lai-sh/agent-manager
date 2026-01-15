@@ -24,12 +24,14 @@ export class IntentDispatcher {
     this.sideEffects = options.sideEffects;
   }
 
-  async dispatch(state: ProjectState, intent: Intent): Promise<StateTransitionResult> {
-    const result = this.transition(state, intent);
-    for (const effect of result.sideEffects) {
+  computeTransition(state: ProjectState, intent: Intent): StateTransitionResult {
+    return this.transition(state, intent);
+  }
+
+  async executeSideEffects(sideEffects: SideEffect[]): Promise<void> {
+    for (const effect of sideEffects) {
       await this.handleSideEffect(effect);
     }
-    return result;
   }
 
   private async handleSideEffect(effect: SideEffect): Promise<void> {
