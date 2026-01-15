@@ -1,7 +1,7 @@
 import { defineConfig } from "tsup";
 
 export default defineConfig({
-  entry: ["src/orchestrator/index.ts"],
+  entry: ["src/orchestrator/index.ts", "src/tui/index.ts"],
   format: ["esm"],
   dts: true,
   sourcemap: true,

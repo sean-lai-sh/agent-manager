@@ -1,5 +1,6 @@
 import {
   AgentTask,
+  AgentResult,
   ApprovalRequest,
   Intent,
   ProjectState,
@@ -8,6 +9,12 @@ import {
   StateTransitionResult,
 } from "./types";
 import { transitionState } from "./stateMachine";
+import {
+  ExecutionAdapter,
+  createOpenCodeAdapter,
+} from "../implementation/adapters";
+import type { ExecutionAdapterConfig } from "../implementation/types";
+import { runTask, isExecutableTask } from "../implementation/runner";
 
 export type TransitionHandler = (
   state: ProjectState,
@@ -48,14 +55,42 @@ export class IntentDispatcher {
   }
 }
 
+export interface DefaultSideEffectHandlerOptions {
+  adapterConfig?: ExecutionAdapterConfig;
+  adapter?: ExecutionAdapter;
+  onResult?: (result: AgentResult) => void | Promise<void>;
+  onApproval?: (approval: ApprovalRequest) => void | Promise<void>;
+}
+
 export class DefaultSideEffectHandler implements SideEffectHandler {
+  private readonly adapter: ExecutionAdapter;
+  private readonly onResult?: (result: AgentResult) => void | Promise<void>;
+  private readonly onApproval?: (approval: ApprovalRequest) => void | Promise<void>;
+
+  constructor(options: DefaultSideEffectHandlerOptions = {}) {
+    this.adapter = options.adapter ?? createOpenCodeAdapter(options.adapterConfig);
+    this.onResult = options.onResult;
+    this.onApproval = options.onApproval;
+  }
+
   async dispatchAgentTask(task: AgentTask): Promise<void> {
-    // TODO: integrate planning/execution agent adapters.
-    throw new Error(`Agent dispatch not implemented for ${task.type}`);
+    if (!isExecutableTask(task)) {
+      throw new Error(`Unsupported task type: ${task.type}`);
+    }
+
+    const result = await runTask(task, this.adapter);
+
+    if (this.onResult) {
+      await this.onResult(result);
+    }
   }
 
   async requestApproval(approval: ApprovalRequest): Promise<void> {
-    // TODO: wire approval requests to the TUI layer.
-    throw new Error(`Approval hook not implemented for ${approval.id}`);
+    if (this.onApproval) {
+      await this.onApproval(approval);
+      return;
+    }
+    // Default behavior: log the approval request (TUI will handle this)
+    console.log(`Approval requested: ${approval.type} (${approval.id})`);
   }
 }

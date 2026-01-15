@@ -4,7 +4,7 @@ import { fileURLToPath } from "url";
 import type { AnsweredClarification, PlanningPromptContext, ProjectContext } from "./types";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const PROMPTS_DIR = join(__dirname, "../../resources/prompts");
+const PROMPTS_DIR = join(__dirname, "../resources/prompts");
 
 function loadPromptTemplate(name: string): string {
   const path = join(PROMPTS_DIR, `${name}.txt`);
